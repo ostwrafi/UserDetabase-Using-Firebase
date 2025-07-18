@@ -1,7 +1,7 @@
 
 # 📦 UserDatabase-Using-Firebase
 
-![Admin Dashboard Preview](bdc81cdc-87f2-49ef-97ff-65cc9fd0a910.png)
+![Admin Dashboard Preview](Detabase.PNG)
 
 > A powerful web-based **Admin Dashboard** built with Firebase Realtime Database. Designed to manage users, HWIDs, bans, and application controls (like version, status, and download link) — similar to KeyAuth but completely custom and flexible.
 
