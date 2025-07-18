@@ -80,9 +80,7 @@ cd UserDetabase-Using-Firebase
 - Use HTTPS for production.
 - Regularly rotate admin credentials.
 
-## 📸 Screenshot
 
-![Dashboard UI](bdc81cdc-87f2-49ef-97ff-65cc9fd0a910.png)
 
 ## 📜 License
 
