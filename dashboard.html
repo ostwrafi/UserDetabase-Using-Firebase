@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+  <script type="module" src="firebase-config.js"></script>
+  <style>
+    body {
+      background-color: #121212;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    .login-box {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 8px;
+      margin: auto;
+      margin-top: 40px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      color: #fff;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #444;
+      text-align: left;
+    }
+    th {
+      background: #222;
+    }
+    .btn {
+      background-color: #3498db;
+      border: none;
+      color: white;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin: 2px;
+    }
+    .banned { color: red; }
+    .unbanned { color: green; }
+  </style>
+</head>
+<body>
+  <div class="login-box" style="width: 95%; max-width: 1100px;">
+    <h2>Admin Dashboard</h2>
+    <button onclick="createUser()">➕ Create User</button>
+    <button onclick="location.reload()">🔄 Refresh</button>
+
+    <h3>🔧 App Control</h3>
+    <input type="text" id="version" placeholder="Set App Version">
+    <input type="text" id="downloadLink" placeholder="Set Download Link">
+    <select id="appStatus">
+      <option value="on">On</option>
+      <option value="off">Off</option>
+    </select>
+    <button onclick="updateAppControl()">💾 Save App Control</button>
+
+    <h3>📦 Application Info</h3>
+    <div id="appInfoBox" style="background:#2c2c2c; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+      <p><strong>Version:</strong> <span id="infoVersion">Loading...</span></p>
+      <p><strong>Status:</strong> <span id="infoStatus">Loading...</span></p>
+      <p><strong>Download Link:</strong> <a id="infoLink" href="#" target="_blank" style="color:#4fc3f7">Loading...</a></p>
+    </div>
+
+    <h3>👥 User List</h3>
+    <table>
+      <thead>
+        <tr>
+          <th><input type="checkbox" disabled></th>
+          <th>Username</th>
+          <th>HWID</th>
+          <th>IP</th>
+          <th>Creation</th>
+          <th>Last Login</th>
+          <th>Banned</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="usersTable"></tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    function createUser() {
+      const username = prompt("Enter Username:");
+      const password = prompt("Enter Password:");
+      if (!username || !password) return alert("Username & password required.");
+      const userRef = ref(db, 'users/' + username);
+      set(userRef, {
+        password: password,
+        hwid: "",
+        ip: "",
+        created: new Date().toLocaleString(),
+        lastLogin: "",
+        banned: false
+      });
+    }
+
+    function updateAppControl() {
+      const version = document.getElementById("version").value;
+      const downloadLink = document.getElementById("downloadLink").value;
+      const status = document.getElementById("appStatus").value;
+      const controlRef = ref(db, 'appControl');
+      set(controlRef, {
+        version: version,
+        link: downloadLink,
+        status: status
+      });
+      alert("App Control Updated!");
+    }
+
+    function loadAppInfo() {
+      const infoRef = ref(db, 'appControl');
+      onValue(infoRef, (snapshot) => {
+        const data = snapshot.val();
+        document.getElementById("infoVersion").textContent = data?.version || 'N/A';
+        document.getElementById("infoStatus").textContent = data?.status || 'N/A';
+        const link = document.getElementById("infoLink");
+        link.href = data?.link || '#';
+        link.textContent = data?.link || 'N/A';
+      });
+    }
+
+    function loadUsers() {
+      const usersRef = ref(db, 'users');
+      const table = document.getElementById("usersTable");
+      onValue(usersRef, (snapshot) => {
+        const data = snapshot.val();
+        table.innerHTML = "";
+        for (const username in data) {
+          const u = data[username];
+          const row = `
+            <tr>
+              <td><input type="checkbox"></td>
+              <td>${username}</td>
+              <td>${u.hwid || '—'}</td>
+              <td>${u.ip || '—'}</td>
+              <td>${u.created || '—'}</td>
+              <td>${u.lastLogin || '—'}</td>
+              <td class="${u.banned ? 'banned' : 'unbanned'}">${u.banned ? 'Banned' : 'Unbanned'}</td>
+              <td>
+                <button class="btn" onclick="resetHWID('${username}')">Reset HWID</button>
+                <button class="btn" onclick="banUser('${username}', ${!u.banned})">${u.banned ? 'Unban' : 'Ban'}</button>
+                <button class="btn" onclick="deleteUser('${username}')">Delete</button>
+              </td>
+            </tr>
+          `;
+          table.innerHTML += row;
+        }
+      });
+    }
+
+    function resetHWID(username) {
+      update(ref(db, 'users/' + username), { hwid: "" });
+    }
+
+    function banUser(username, status) {
+      update(ref(db, 'users/' + username), { banned: status });
+    }
+
+    function deleteUser(username) {
+      remove(ref(db, 'users/' + username));
+    }
+
+    loadUsers();
+    loadAppInfo();
+    window.createUser = createUser;
+    window.resetHWID = resetHWID;
+    window.banUser = banUser;
+    window.deleteUser = deleteUser;
+    window.updateAppControl = updateAppControl;
+  </script>
+</body>
+</html>
