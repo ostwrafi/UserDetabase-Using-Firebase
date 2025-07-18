@@ -65,7 +65,166 @@ cd UserDetabase-Using-Firebase
 4. **Start Using**
    - Open `login.html` in a browser
    - Log in using a Firebase Admin account (create one manually via Firebase Auth)
+     
+## Using in C# Windows from application Login From
+  ```C#
+     
+       // Firebase config
+private const string firebaseDbUrl = "https://myappauthsystem-default-rtdb.firebaseio.com/users/";
 
+  
+// HWID generator
+private string GetHWID()
+{
+    string hwid = "";
+    using (var mc = new ManagementClass("Win32_ComputerSystemProduct"))
+    {
+        foreach (ManagementObject obj in mc.GetInstances())
+        {
+            hwid = obj.Properties["UUID"].Value.ToString();
+            break;
+        }
+    }
+    return hwid;
+}
+public class AppControlInfo
+{
+    public string version;
+    public string status;
+    public string link;
+}
+
+public async Task<AppControlInfo> GetAppControlAsync()
+{
+    using (HttpClient client = new HttpClient())
+    {
+        string url = "https://myappauthsystem-default-rtdb.firebaseio.com/appControl.json";
+        var response = await client.GetStringAsync(url);
+        JObject json = JObject.Parse(response);
+
+        return new AppControlInfo
+        {
+            version = (string)json["version"],
+            status = (string)json["status"],
+            link = (string)json["link"]
+        };
+    }
+}
+ ```
+  ```App Control 
+ private async void CheckAppControl()
+ {
+     try
+     {
+         var appControl = await GetAppControlAsync();
+
+         if (appControl.status == "off")
+         {
+             this.Hide();
+             MessageBox.Show("The application is currently disabled. Please try again later.");
+             Environment.Exit(0); 
+         }
+
+         string currentVersion = "1.0.0"; 
+         if (appControl.version != currentVersion)
+         {
+             var result = MessageBox.Show("A new version is available! Do you want to download it now?", "Update Available", MessageBoxButtons.YesNo);
+             if (result == DialogResult.Yes)
+             {
+                 System.Diagnostics.Process.Start(appControl.link);
+                 Environment.Exit(0);
+             }
+             else
+             {
+                 Environment.Exit(0); 
+             }
+         }
+     }
+     catch (Exception ex)
+     {
+         MessageBox.Show("Error checking app control: " + ex.Message);
+         Environment.Exit(0);
+     }
+ }
+ ```
+  ```Login Button
+        private async void guna2Button1_Click(object sender, EventArgs e)
+        {
+           
+
+            string username = User.Text;
+            string password = Pass.Text;
+            string hwid = GetHWID();
+
+            xd.Text = "[+] Checking credentials...";
+            xd.ForeColor = Color.Yellow;
+
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    string url = $"{firebaseDbUrl}{username}.json";
+                    var response = await client.GetAsync(url);
+                    string result = await response.Content.ReadAsStringAsync();
+
+                    if (result == "null")
+                    {
+                        Loginerror("User not found.");
+                        return;
+                    }
+
+                    var json = JObject.Parse(result);
+
+                    if (json["password"]?.ToString() != password)
+                    {
+                        Loginerror("Wrong password.");
+                        return;
+                    }
+
+                    if (json["banned"]?.ToObject<bool>() == true)
+                    {
+                        Loginerror("User is banned.");
+                        return;
+                    }
+
+                    // First login: Save HWID
+                    if (string.IsNullOrEmpty(json["hwid"]?.ToString()))
+                    {
+                        var updateData = new JObject { ["hwid"] = hwid, ["lastLogin"] = DateTime.Now.ToString() };
+                        var content = new StringContent(updateData.ToString(), Encoding.UTF8, "application/json");
+                        await client.PatchAsync(url, content);
+                    }
+                    else if (json["hwid"]?.ToString() != hwid)
+                    {
+                        Loginerror("HWID mismatch.");
+                        return;
+                    }
+
+                    LoginSucces();
+                }
+                catch (Exception ex)
+                {
+                    Loginerror("Error: " + ex.Message);
+                }
+            }
+        }
+        private void LoginSucces()
+        {
+            xd.Text = "[+] Login success!";
+            xd.ForeColor = Color.Lime;
+            this.Hide();
+            RuntimeBroker main = new RuntimeBroker();
+            main.Show();
+        }
+
+        private void Loginerror(string msg)
+        {
+            xd.Text = "[x] " + msg;
+            xd.ForeColor = Color.Red;
+        }
+
+
+  ```
 ## 🧠 How It Works
 
 - **Admin Login**: Uses Firebase Auth to protect access.
