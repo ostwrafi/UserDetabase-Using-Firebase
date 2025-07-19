@@ -3,13 +3,14 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-aut
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "ENTER_API_KEY_HERE",
-  authDomain: "ENTER_AUTH_DOMAIN_HERE",
-  projectId: "ENTER_PROJECT_ID_HERE",
-  storageBucket: "ENTER_STORAGE_BUCKET_HERE",
-  messagingSenderId: "ENTER_MESSAGING_SENDER_ID_HERE",
-  appId: "ENTER_APP_ID_HERE",
-  databaseURL: "ENTER_DATABASE_URL_HERE"
+  apiKey: "AIzaSyDZv8zYhfK23wb41uic4xl7mLgjBfilBPY",
+  authDomain: "silva-cdf71.firebaseapp.com",
+  databaseURL: "https://silva-cdf71-default-rtdb.firebaseio.com",
+  projectId: "silva-cdf71",
+  storageBucket: "silva-cdf71.firebasestorage.app",
+  messagingSenderId: "1062982262261",
+  appId: "1:1062982262261:web:4997ef08f4372db41754bc",
+  measurementId: "G-4E4M5BKRR2"
 };
 
 const app = initializeApp(firebaseConfig);
